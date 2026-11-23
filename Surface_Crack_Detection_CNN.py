@@ -2,8 +2,11 @@ import os
 import shutil
 import random
 import numpy as np
+import matplotlib.pyplot as plt
 
 import tensorflow as tf
+
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
 
 # ------------------------------------------------------------
 # Step 1: Basic Configuration
@@ -140,3 +143,71 @@ split_and_copy_images(NEGATIVE_FOLDER, negative_images, "NoCrack")
 train_dir = os.path.join(PROCESSED_DATASET, "train")
 validation_dir = os.path.join(PROCESSED_DATASET, "validation")
 test_dir = os.path.join(PROCESSED_DATASET, "test")
+
+# ------------------------------------------------------------
+# Step 6: Image Preprocessing and Augmentation
+# ------------------------------------------------------------
+
+# Normalize training pixels and apply augmentation to improve generalization.
+train_datagen = ImageDataGenerator(
+    rescale=1.0 / 255,       # Pixel values: 0..255 -> approximately 0..1
+    rotation_range=15,       # Random rotation up to approximately +/-15 degrees
+    zoom_range=0.2,          # Random zoom variation
+    width_shift_range=0.1,   # Horizontal shift up to 10% of image width
+    height_shift_range=0.1,  # Vertical shift up to 10% of image height
+    horizontal_flip=True     # Random left-right flip
+)
+
+validation_datagen = ImageDataGenerator(
+    rescale=1.0 / 255
+)
+
+test_datagen = ImageDataGenerator(
+    rescale=1.0 / 255
+)
+
+train_data = train_datagen.flow_from_directory(
+    train_dir,
+    target_size=(IMAGE_SIZE, IMAGE_SIZE),
+    batch_size=BATCH_SIZE,
+    class_mode="binary"
+)
+
+validation_data = validation_datagen.flow_from_directory(
+    validation_dir,
+    target_size=(IMAGE_SIZE, IMAGE_SIZE),
+    batch_size=BATCH_SIZE,
+    class_mode="binary"
+)
+
+test_data = test_datagen.flow_from_directory(
+    test_dir,
+    target_size=(IMAGE_SIZE, IMAGE_SIZE),
+    batch_size=BATCH_SIZE,
+    class_mode="binary",  # Binary labels because there are two classes
+    shuffle=False           # Preserve order for confusion-matrix comparison
+)
+
+print("Class Indices:", train_data.class_indices)
+
+# ------------------------------------------------------------
+# Step 7: Display Sample Images
+# ------------------------------------------------------------
+
+sample_images, sample_labels = next(train_data)
+
+plt.figure(figsize=(10, 6))
+
+for i in range(6):
+    plt.subplot(2, 3, i + 1)
+    plt.imshow(sample_images[i])
+
+    if sample_labels[i] == train_data.class_indices["Crack"]:
+        plt.title("Crack")
+    else:
+        plt.title("No Crack")
+
+    plt.axis("off")
+
+plt.suptitle("Marvellous CNN Sample Training Images")
+plt.show()
