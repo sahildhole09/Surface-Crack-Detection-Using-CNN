@@ -34,7 +34,6 @@ random.seed(RANDOM_SEED)
 np.random.seed(RANDOM_SEED)
 tf.random.set_seed(RANDOM_SEED)
 
-
 # ------------------------------------------------------------
 # Step 2: Check Original Dataset
 # ------------------------------------------------------------
@@ -44,10 +43,8 @@ def check_folder(folder_path):
         print("ERROR: Folder not found:", folder_path)
         exit()
 
-
 check_folder(POSITIVE_FOLDER)
 check_folder(NEGATIVE_FOLDER)
-
 
 def get_image_files(folder):
     valid_extensions = (".jpg", ".jpeg", ".png", ".bmp", ".webp")
@@ -55,7 +52,6 @@ def get_image_files(folder):
         file for file in os.listdir(folder)
         if file.lower().endswith(valid_extensions)
     ]
-
 
 positive_images = get_image_files(POSITIVE_FOLDER)
 negative_images = get_image_files(NEGATIVE_FOLDER)
@@ -67,6 +63,7 @@ if len(positive_images) == 0 or len(negative_images) == 0:
     print("ERROR: Positive or Negative folder contains no images.")
     exit()
 
+print("-" * 70)
 
 # ------------------------------------------------------------
 # Step 3: Create Industrial Folder Structure
@@ -89,3 +86,57 @@ if os.path.exists(PROCESSED_DATASET):
 # Create a fresh train/validation/test directory structure.
 for folder in folders:
     os.makedirs(os.path.join(PROCESSED_DATASET, folder), exist_ok=True)
+
+# ------------------------------------------------------------
+# Step 4: Split Data into Train, Validation, Test
+# ------------------------------------------------------------
+
+def split_and_copy_images(source_folder, image_files, class_name):
+    random.shuffle(image_files)
+
+    total_images = len(image_files)
+
+    # 70% training, 15% validation and the remaining ~15% testing.
+    train_count = int(total_images * 0.70)
+    validation_count = int(total_images * 0.15)
+
+    train_files = image_files[:train_count]
+    validation_files = image_files[train_count:train_count + validation_count]
+    test_files = image_files[train_count + validation_count:]
+
+    split_data = {
+        "train": train_files,
+        "validation": validation_files,
+        "test": test_files
+    }
+
+    for split_name, files in split_data.items():
+        destination_folder = os.path.join(
+            PROCESSED_DATASET,
+            split_name,
+            class_name
+        )
+
+        for file in files:
+            source_path = os.path.join(source_folder, file)
+            destination_path = os.path.join(destination_folder, file)
+
+            if not os.path.exists(destination_path):
+                shutil.copy(source_path, destination_path)
+
+    print(f"{class_name} Images Split:")
+    print("Training Images   :", len(train_files))
+    print("Validation Images :", len(validation_files))
+    print("Testing Images    :", len(test_files))
+    print("-" * 70)
+
+split_and_copy_images(POSITIVE_FOLDER, positive_images, "Crack")
+split_and_copy_images(NEGATIVE_FOLDER, negative_images, "NoCrack")
+
+# ------------------------------------------------------------
+# Step 5: Define Train, Validation and Test Paths
+# ------------------------------------------------------------
+
+train_dir = os.path.join(PROCESSED_DATASET, "train")
+validation_dir = os.path.join(PROCESSED_DATASET, "validation")
+test_dir = os.path.join(PROCESSED_DATASET, "test")
