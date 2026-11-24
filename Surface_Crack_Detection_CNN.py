@@ -5,7 +5,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 import tensorflow as tf
-
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Dropout, BatchNormalization
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 
 # ------------------------------------------------------------
@@ -211,3 +212,58 @@ for i in range(6):
 
 plt.suptitle("Marvellous CNN Sample Training Images")
 plt.show()
+
+# ------------------------------------------------------------
+# Step 8: Build Industrial CNN Model
+# ------------------------------------------------------------
+
+# Sequential connects layers one after another.
+model = Sequential()
+
+# Convolution block 1:
+# 32 learnable filters, each 3x3; ReLU adds non-linearity.
+# Input shape is 128 x 128 x 3 (RGB).
+model.add(Conv2D(32, (3, 3), activation="relu", input_shape=(IMAGE_SIZE, IMAGE_SIZE, 3)))
+model.add(BatchNormalization())            # Stabilize intermediate activations
+model.add(MaxPooling2D(pool_size=(2, 2)))  # Downsample spatial dimensions
+
+model.add(Conv2D(64, (3, 3), activation="relu"))
+model.add(BatchNormalization())
+model.add(MaxPooling2D(pool_size=(2, 2)))
+
+model.add(Conv2D(128, (3, 3), activation="relu"))
+model.add(BatchNormalization())
+model.add(MaxPooling2D(pool_size=(2, 2)))
+
+model.add(Conv2D(256, (3, 3), activation="relu"))
+model.add(BatchNormalization())
+model.add(MaxPooling2D(pool_size=(2, 2)))
+
+# Convert multidimensional feature maps to a one-dimensional vector.
+model.add(Flatten())
+
+# Fully connected classification layers.
+model.add(Dense(256, activation="relu"))
+model.add(Dropout(0.5))  # Drop 50% of outputs during training to reduce overfitting
+
+model.add(Dense(128, activation="relu"))
+model.add(Dropout(0.3))  # Additional regularization
+
+# One sigmoid output neuron for binary classification.
+# The result is a probability-like value between 0 and 1 for class index 1.
+model.add(Dense(1, activation="sigmoid"))
+
+# ------------------------------------------------------------
+# Step 9: Compile Model
+# ------------------------------------------------------------
+
+# Adam updates weights from gradients.
+# Binary crossentropy is the loss for this sigmoid binary classifier.
+# Accuracy is tracked as the primary displayed metric.
+model.compile(
+    optimizer="adam",
+    loss="binary_crossentropy",
+    metrics=["accuracy"]
+)
+
+model.summary()
