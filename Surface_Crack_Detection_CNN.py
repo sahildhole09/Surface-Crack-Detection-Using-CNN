@@ -8,6 +8,7 @@ import tensorflow as tf
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Dropout, BatchNormalization
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
+from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint, ReduceLROnPlateau
 
 # ------------------------------------------------------------
 # Step 1: Basic Configuration
@@ -267,3 +268,74 @@ model.compile(
 )
 
 model.summary()
+
+# ------------------------------------------------------------
+# Step 10: Industrial Training Callbacks
+# ------------------------------------------------------------
+
+# Stop training when validation loss stops improving.
+# restore_best_weights returns the in-memory model to its best val_loss weights.
+early_stop = EarlyStopping(
+    monitor="val_loss",
+    patience=4,
+    restore_best_weights=True
+)
+
+# Save the model whenever validation accuracy reaches a new best value.
+checkpoint = ModelCheckpoint(
+    "Best_Crack_Detection_Model.keras",
+    monitor="val_accuracy",
+    save_best_only=True,
+    mode="max",
+    verbose=1
+)
+
+# Reduce the learning rate when validation loss reaches a plateau.
+# factor=0.2 means: new learning rate = current learning rate * 0.2.
+reduce_lr = ReduceLROnPlateau(
+    monitor="val_loss",
+    factor=0.2,
+    patience=2,
+    min_lr=0.00001,
+    verbose=1
+)
+
+
+# ------------------------------------------------------------
+# Step 11: Train CNN Model
+# ------------------------------------------------------------
+
+history = model.fit(
+    train_data,
+    epochs=EPOCHS,
+    validation_data=validation_data,
+    callbacks=[early_stop, checkpoint, reduce_lr]
+)
+
+
+# ------------------------------------------------------------
+# Step 12: Plot Accuracy Graph
+# ------------------------------------------------------------
+
+plt.figure(figsize=(8, 5))
+plt.plot(history.history["accuracy"], label="Training Accuracy")
+plt.plot(history.history["val_accuracy"], label="Validation Accuracy")
+plt.xlabel("Epochs")
+plt.ylabel("Accuracy")
+plt.title("Marvellous CNN Training vs Validation Accuracy")
+plt.legend()
+plt.show()
+
+
+# ------------------------------------------------------------
+# Step 13: Plot Loss Graph
+# ------------------------------------------------------------
+
+plt.figure(figsize=(8, 5))
+plt.plot(history.history["loss"], label="Training Loss")
+plt.plot(history.history["val_loss"], label="Validation Loss")
+plt.xlabel("Epochs")
+plt.ylabel("Loss")
+plt.title("Marvellous CNN Training vs Validation Loss")
+plt.legend()
+plt.show()
