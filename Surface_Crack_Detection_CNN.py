@@ -10,6 +10,8 @@ from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Dropou
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint, ReduceLROnPlateau
 
+from sklearn.metrics import confusion_matrix, classification_report
+
 # ------------------------------------------------------------
 # Step 1: Basic Configuration
 # ------------------------------------------------------------
@@ -300,7 +302,6 @@ reduce_lr = ReduceLROnPlateau(
     verbose=1
 )
 
-
 # ------------------------------------------------------------
 # Step 11: Train CNN Model
 # ------------------------------------------------------------
@@ -311,7 +312,6 @@ history = model.fit(
     validation_data=validation_data,
     callbacks=[early_stop, checkpoint, reduce_lr]
 )
-
 
 # ------------------------------------------------------------
 # Step 12: Plot Accuracy Graph
@@ -326,7 +326,6 @@ plt.title("Marvellous CNN Training vs Validation Accuracy")
 plt.legend()
 plt.show()
 
-
 # ------------------------------------------------------------
 # Step 13: Plot Loss Graph
 # ------------------------------------------------------------
@@ -339,3 +338,44 @@ plt.ylabel("Loss")
 plt.title("Marvellous CNN Training vs Validation Loss")
 plt.legend()
 plt.show()
+
+# ------------------------------------------------------------
+# Step 14: Evaluate Model on Test Dataset
+# ------------------------------------------------------------
+
+print("=" * 70)
+print("Testing Model on Unseen Test Data")
+print("=" * 70)
+
+test_loss, test_accuracy = model.evaluate(test_data)
+
+print("Test Loss     :", test_loss)
+print("Test Accuracy :", test_accuracy * 100)
+
+# ------------------------------------------------------------
+# Step 15: Confusion Matrix and Classification Report
+# ------------------------------------------------------------
+
+# Generate sigmoid outputs and convert them to class indices using 0.5.
+predictions = model.predict(test_data)
+predicted_classes = (predictions > 0.5).astype(int).reshape(-1)
+
+actual_classes = test_data.classes
+
+print("Confusion Matrix:")
+print(confusion_matrix(actual_classes, predicted_classes))
+
+print("Classification Report:")
+print(classification_report(
+    actual_classes,
+    predicted_classes,
+    target_names=list(test_data.class_indices.keys())
+))
+
+# ------------------------------------------------------------
+# Step 16: Save Final Model
+# ------------------------------------------------------------
+
+model.save("Final_Marvellous_Crack_Detection_Model.keras")
+
+print("Final model saved successfully.")
