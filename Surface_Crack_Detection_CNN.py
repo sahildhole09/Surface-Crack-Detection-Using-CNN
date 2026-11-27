@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import tensorflow as tf
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Dropout, BatchNormalization
-from tensorflow.keras.preprocessing.image import ImageDataGenerator
+from tensorflow.keras.preprocessing.image import ImageDataGenerator, load_img, img_to_array
 from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint, ReduceLROnPlateau
 
 from sklearn.metrics import confusion_matrix, classification_report
@@ -379,3 +379,54 @@ print(classification_report(
 model.save("Final_Marvellous_Crack_Detection_Model.keras")
 
 print("Final model saved successfully.")
+
+# ------------------------------------------------------------
+# Step 17: Single Image Prediction Function
+# ------------------------------------------------------------
+
+def predict_single_image(image_path):
+    if not os.path.exists(image_path):
+        print("ERROR: Image not found:", image_path)
+        return
+
+    # Apply the same basic preprocessing expected by the trained model.
+    img = load_img(image_path, target_size=(IMAGE_SIZE, IMAGE_SIZE))
+    img_array = img_to_array(img)                  # Image -> numerical array
+    img_array = img_array / 255.0                  # Normalize to approximately 0..1
+    img_array = np.expand_dims(img_array, axis=0)  # Add batch dimension
+
+    prediction = model.predict(img_array)
+    prediction_value = prediction[0][0]
+
+    crack_index = train_data.class_indices["Crack"]
+
+    if crack_index == 1:
+        final_result = "Crack Detected" if prediction_value > 0.5 else "No Crack"
+    else:
+        final_result = "No Crack" if prediction_value > 0.5 else "Crack Detected"
+
+    print("=" * 70)
+    print("Single Image Prediction")
+    print("=" * 70)
+    print("Image Path       :", image_path)
+    print("Prediction Value :", prediction_value)
+    print("Final Result     :", final_result)
+
+    plt.imshow(load_img(image_path))
+    plt.title(final_result)
+    plt.axis("off")
+    plt.show()
+
+# ------------------------------------------------------------
+# Step 18: Test Single Image
+# ------------------------------------------------------------
+
+# Change image name according to your actual image file
+sample_test_image = os.path.join(PROCESSED_DATASET, "test", "Crack")
+
+test_images = get_image_files(sample_test_image)
+
+if len(test_images) > 0:
+    predict_single_image(os.path.join(sample_test_image, test_images[0]))
+else:
+    print("No test image found for single image prediction.")
